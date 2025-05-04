@@ -326,7 +326,12 @@ def main():
 
     # Final test evaluation
     print(f"\nLoading best model ({best_bal:.3f}) for test...")
-    model.load_state_dict(torch.load(ckpt_path, map_location=device))
+    # only load the raw tensor weights (no pickle) to avoid FutureWarning
+    model.load_state_dict(
+        torch.load(ckpt_path,
+                   map_location=device,
+                   weights_only=True)
+    )
     te_loss, te_acc, te_bal = eval_epoch(model, test_loader, criterion, device)
     print(f"▶ Test Loss: {te_loss:.3f} | Test Acc: {te_acc:.3f} | Test Bal: {te_bal:.3f}")
 
