@@ -16,11 +16,11 @@ _Reproducing Hao et al. (2019), “CNN Design for Alzheimer’s Disease”_
 ## 🗂️ Data
 
 We originally explored raw ADNI→CLINICA preprocessing but ultimately used pre-processed volumes:
-
+```bash
 data/
 ├── nifti/ # pre-processed .nii / .nii.gz files
 └── labels.tsv # subject_id, session, diagnosis, age
-
+```
 ---
 
 ## 🔧 Installation
