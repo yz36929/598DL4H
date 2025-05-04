@@ -1,0 +1,24 @@
+# paths to my .tsv files
+data:
+  preproc_dir: "./data/niigz" # "./data/nifti"  # directory to preprocessed NIfTI files
+  train_split: 0.70
+  val_split:   0.15
+  test_split:  0.15
+  labels:      "./data/labels.tsv"
+  seed:        42
+  include_age: False # True: include age as a feature
+
+# model + training hyperparameters
+model:
+  num_classes: 3 # AD/CN/MCI
+training:
+  lr: 0.0001 #1e-4
+  batch_size: 2
+  epochs:     15
+  device:     "cuda"
+  num_workers: 8
+
+# where to save checkpoints / logs
+paths:
+  ckpt_dir:  "checkpoints"
+  log_dir:   "logs"
