@@ -13,6 +13,8 @@ from torch import nn, optim
 from torch.utils.data import DataLoader, Subset, WeightedRandomSampler
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
+from sklearn.metrics import roc_auc_score
+from sklearn.preprocessing import label_binarize
 
 from src.dataset import NiftiDataset
 from src.model import AD3DCNN
@@ -152,12 +154,13 @@ def eval_epoch(model, loader, criterion, device) -> tuple:
         criterion: Loss function.
         device: Torch device.
     Returns:
-        Tuple of (loss, accuracy, balanced_accuracy).
+        Tuple of (loss, accuracy, balanced_accuracy, auc_roc).
     """
     cfg = load_config()
     model.eval()
     losses, preds, targets = [], [], []
     use_age = cfg['data']['include_age']
+    all_probs = []   # to store softmax probabilities
 
     with torch.no_grad():
         for batch in loader:
@@ -173,11 +176,23 @@ def eval_epoch(model, loader, criterion, device) -> tuple:
             losses.append(criterion(outputs, labels).item())
             preds.extend(outputs.softmax(1).argmax(1).cpu().tolist())
             targets.extend(labels.cpu().tolist())
+            all_probs.extend(outputs.softmax(1).cpu().tolist())
 
     avg_loss = sum(losses) / len(losses)
     acc = accuracy_score(targets, preds)
     bal_acc = balanced_accuracy_score(targets, preds)
-    return avg_loss, acc, bal_acc
+
+    # one‐hot encode the true labels
+    y_true  = label_binarize(targets, classes=[0,1,2])
+    y_score = np.array(all_probs)   # shape [N,3]
+
+    auc_roc = roc_auc_score(
+        y_true,
+        y_score,
+        average='macro',
+        multi_class='ovo'
+    )
+    return avg_loss, acc, bal_acc, auc_roc
 
 def main():
     """
@@ -276,7 +291,7 @@ def main():
     ).to(device)
 
     # # ev impl3 - Make the network wider
-    # model_wide = AD3DCNN(
+    # model = AD3DCNN(
     #     in_channels=1,
     #     num_classes=cfg['model']['num_classes'],
     #     base_filters=64,                     # ← doubled from 32
@@ -299,7 +314,7 @@ def main():
 
         tr_loss, tr_acc, tr_bal = train_epoch(
             model, train_loader, criterion, optimizer, device)
-        vl_loss, vl_acc, vl_bal = eval_epoch(
+        vl_loss, vl_acc, vl_bal,vl_auc = eval_epoch(
             model, val_loader, criterion, device)
         scheduler.step(vl_loss)
 
@@ -316,6 +331,7 @@ def main():
         writer.add_scalar('Acc/val', vl_acc, ep+1)
         writer.add_scalar('BalAcc/train', tr_bal, ep+1)
         writer.add_scalar('BalAcc/val', vl_bal, ep+1)
+        writer.add_scalar('AUC/val', vl_auc, ep+1)
         writer.add_scalar('Time/epoch', elapsed, ep+1)
 
         if vl_bal > best_bal:
