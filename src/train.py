@@ -320,9 +320,9 @@ def main():
 
         elapsed = time.time() - start
         print(f"Epoch {ep+1:02d}: "
-              f"Train {tr_loss:.3f}/{tr_acc:.3f}/{tr_bal:.3f} | "
-              f"Val   {vl_loss:.3f}/{vl_acc:.3f}/{vl_bal:.3f} | "
-              f"Time {elapsed:.1f}s")
+        f"Train {tr_loss:.3f}/{tr_acc:.3f}/{tr_bal:.3f} | "
+        f"Val   {vl_loss:.3f}/{vl_acc:.3f}/{vl_bal:.3f}/{vl_auc:.3f} | "
+        f"Time {elapsed:.1f}s")
 
         # Log to TensorBoard
         writer.add_scalar('Loss/train', tr_loss, ep+1)
@@ -348,8 +348,8 @@ def main():
                    map_location=device,
                    weights_only=True)
     )
-    te_loss, te_acc, te_bal = eval_epoch(model, test_loader, criterion, device)
-    print(f"▶ Test Loss: {te_loss:.3f} | Test Acc: {te_acc:.3f} | Test Bal: {te_bal:.3f}")
+    te_loss, te_acc, te_bal, te_auc = eval_epoch(model, test_loader, criterion, device)
+    print(f"▶ Test Loss: {te_loss:.3f} | Test Acc: {te_acc:.3f} | Test Bal: {te_bal:.3f} | Test AUC: {te_auc:.3f}")
 
     writer.close()
 
